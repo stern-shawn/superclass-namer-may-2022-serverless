@@ -30,8 +30,8 @@ Want to be able to deploy and tweak this example application on your own account
 
         npm i -g twilio-cli
         twilio plugins:install @twilio-labs/plugin-serverless
-        twilio login
         twilio autocomplete bash
+        twilio login
 
 1. Clone this repo to your local machine.
 
