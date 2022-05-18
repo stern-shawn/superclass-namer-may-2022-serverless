@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Functions + Sync = 🚀!</title>
+    <style>
+      body {
+        font-family: -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI',
+          Roboto, 'Helvetica Neue', Arial, sans-serif;
+        color: #0d122b;
+        border-top: 5px solid #f22f46;
+      }
+      main {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      a {
+        color: #008cff;
+      }
+      footer {
+        margin: 2rem auto 0;
+        max-width: 800px;
+        text-align: center;
+      }
+      footer p {
+        border-top: 1px solid rgba(148, 151, 155, 0.2);
+        padding-top: 2em;
+        margin: 0 2em;
+      }
+      li {
+        list-style: none;
+      }
+      #voting {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+        margin-bottom: 2rem;
+        font-weight: bolder;
+      }
+      #votes-list {
+        display: grid;
+        gap: 20px;
+        grid-template-columns: repeat(auto-fit, minmax(30px, 1fr));
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Ahoy there!</h1>
+      <p>
+        This is an example of a real-time web app hosted by
+        <a href="https://www.twilio.com/docs/runtime/functions"
+          >Twilio Functions</a
+        >
+        and <a href="https://www.twilio.com/docs/runtime/assets">Assets</a>.
+        (Built in local development thanks to the
+        <a href="https://www.twilio.com/docs/labs/serverless-toolkit"
+          >Serverless Toolkit</a
+        >, also!)
+      </p>
+      <p>
+        It fetches a
+        <a href="https://www.twilio.com/docs/iam/access-tokens"
+          >Sync Access Token</a
+        >
+        from a Twilio Function, renders any existing votes from a
+        <a href="https://www.twilio.com/docs/sync/api/list-resource"
+          >Sync List</a
+        >, and displays incoming votes as you cast them in real-time. This page
+        itself is an Asset hosted by Twilio :)
+      </p>
+      <p>
+        If you want to learn more and see examples of what else you can build,
+        check out
+        <a href="https://www.twilio.com/docs/runtime">the docs</a> that I write
+        about these awesome tools and let me know what you think! 🖤
+      </p>
+      <h2>Votes:</h2>
+      <div id="voting">
+        <span>Cake: <span id="cake-tally">0</span></span>
+        <span>Pie: <span id="pie-tally">0</span></span>
+      </div>
+      <div id="loading-message">Loading Votes...</div>
+      <div id="votes-list" />
+    </main>
+    <footer>
+      <p>
+        Made with 💖 by your friends at
+        <a href="https://www.twilio.com">Twilio</a>
+      </p>
+    </footer>
+  </body>
+  <script
+    type="text/javascript"
+    src="//media.twiliocdn.com/sdk/js/sync/v3.0/twilio-sync.min.js"
+  ></script>
+  <script>
+    // Our app state
+    const tallies = {
+      cake: 0,
+      pie: 0,
+    };
+
+    // Helper to increment vote tallies and keep UI in sync with changes
+    const updateAndRenderTally = (vote) => {
+      const treat = vote === '🍰' ? 'cake' : 'pie';
+      tallies[treat]++;
+      const element = document.getElementById(`${treat}-tally`);
+      element.innerText = tallies[treat];
+    };
+
+    window.addEventListener('load', async () => {
+      const votesList = document.getElementById('votes-list');
+      const loadingMessage = document.getElementById('loading-message');
+
+      try {
+        // Get the Sync access token and list name from the serverless function
+        const { syncListName, token } = await fetch('/access').then((res) =>
+          res.json()
+        );
+        const syncClient = new Twilio.Sync.Client(token);
+        // Fetch a reference to the votes Sync List
+        const syncList = await syncClient.list(syncListName);
+        // Get the most recent votes (if any) in the List
+        const existingVoteItems = await syncList.getItems({ order: 'desc' });
+        // Hide the loading message
+        loadingMessage.style.display = 'none';
+        // Render any existing votes to the page, remember to reverse the order
+        // since they're fetched in descending order in this case
+        votesList.innerHTML = existingVoteItems.items
+          .reverse()
+          .map((item) => {
+            const { vote } = item.data;
+            updateAndRenderTally(vote);
+            return `<div>${vote}</div>`;
+          })
+          .join('');
+        // Add an event listener to the List so that incoming votes can
+        // be displayed in real-time
+        syncList.on('itemAdded', ({ item }) => {
+          const { vote } = item.data;
+          updateAndRenderTally(vote);
+          // Add the new vote to the list by adding a new <div> element
+          // containing the incoming vote's text
+          const newListItem = document.createElement('div');
+          votesList.appendChild(newListItem).innerText = vote;
+        });
+        // Disconnect/refresh logic
+        syncClient.on('tokenAboutToExpire', async () => {
+          try {
+            // Refresh the access token and update the Sync client
+            const refreshAccess = await fetch('/access').then((res) =>
+              res.json()
+            );
+            syncClient.updateToken(refreshAccess.token);
+          } catch (error) {
+            console.error(error);
+            loadingMessage.innerText =
+              'Unable to refresh access to votes 😭, try reloading your page!';
+            loadingMessage.style.color = 'red';
+            loadingMessage.style.fontWeight = 'bold';
+          }
+        });
+      } catch (error) {
+        console.error(error);
+        loadingMessage.innerText = 'Unable to load votes 😭';
+        loadingMessage.style.color = 'red';
+        loadingMessage.style.fontWeight = 'bold';
+      }
+    });
+  </script>
+</html>
