@@ -22,7 +22,7 @@ exports.handler = (context, event, callback) => {
   // Return two pieces of information: the name of the sync list so it can
   // be referenced by the client, and the JWT form of the access token
   const response = {
-    syncListName: context.SYNC_LIST_NAME || 'serverless-superclass',
+    syncListName: context.SYNC_LIST_NAME,
     token: token.toJwt(),
   };
 
