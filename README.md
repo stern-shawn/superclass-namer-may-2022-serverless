@@ -28,18 +28,16 @@ Want to be able to deploy and tweak this example application on your own account
 
 1. Make sure you have the [Twilio CLI](https://www.twilio.com/docs/twilio-cli/quickstart) installed as well as the [Serverless Toolkit](https://www.twilio.com/docs/labs/serverless-toolkit) plugin. The exact commands may vary based on your OS and choice of shell, but the commands will generally follow this sequence (omit if you already have these installed!):
 
-        ```console
         npm i -g twilio-cli
         twilio plugins:install @twilio-labs/plugin-serverless
         twilio login
         twilio autocomplete bash
-        ```
 
 1. Clone this repo to your local machine.
 
 1. In a separate directory from the cloned repo, run:
 
-        `twilio serverless:init [YOUR_APP_NAME] --empty`
+        twilio serverless:init [YOUR_APP_NAME] --empty
 
 1. Copy the `assets` folder of this repo, and use it to overwrite the empty `assets` folder in your new app's directory.
 
@@ -53,9 +51,7 @@ Want to be able to deploy and tweak this example application on your own account
 
 1. To test that it's working, make sure to connect a Twilio phone number to your `/handle-call` Function. You can do so from your [phone numbers page](https://www.twilio.com/console/phone-numbers/incoming) in the console, or with the Twilio CLI:
 
-        ```console
         twilio phone-numbers:update [E164_PHONE_NUMBER OR PHONE_NUMBER_SID] \
           --voice-url "[URL_TO_HANDLE_CALL_FUNCTION]"
-        ```
 
   Once this is complete, have fun calling the number, casting votes, and seeing them update live in your browser! We can't wait to see what else you will build!
